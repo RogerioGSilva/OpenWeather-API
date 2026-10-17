@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clima nas Capitais</title>
+<style>
+  :root {
+    --bg: #f3f6f8;
+    --surface: #ffffff;
+    --fg: #14232e;
+    --muted: #5d6f7c;
+    --line: #d9e1e7;
+    --accent: #0b6e8a;
+    --accent-fg: #ffffff;
+    --error-bg: #fdecec;
+    --error-fg: #8a1f1f;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1a22;
+      --surface: #16252f;
+      --fg: #e6eef3;
+      --muted: #8fa3b1;
+      --line: #263a47;
+      --accent: #4cc2e0;
+      --accent-fg: #06222c;
+      --error-bg: #3a1d1d;
+      --error-fg: #ffb4b4;
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 32px 16px;
+  }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 20px; }
+  h1 { margin: 0; font-size: 1.6rem; letter-spacing: -0.01em; }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; }
+
+  .controls { display: grid; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  label { display: grid; gap: 6px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  select, input {
+    font: inherit; font-size: 1rem; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; width: 100%;
+    text-transform: none; letter-spacing: normal; font-weight: 400;
+  }
+  select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hint { font-size: 0.8rem; color: var(--muted); text-transform: none; letter-spacing: normal; font-weight: 400; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+  .card[hidden] { display: none; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .city { margin: 0; font-size: 1.3rem; }
+  .when { margin: 0; color: var(--muted); font-size: 0.85rem; }
+  .now { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .now img { width: 84px; height: 84px; margin: -8px 0; }
+  .temp { font-size: 3.4rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .desc { font-size: 1.05rem; text-transform: capitalize; }
+  .feels { color: var(--muted); font-size: 0.9rem; }
+
+  dl { margin: 18px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  dl > div { background: var(--surface); padding: 12px 14px; min-width: 0; }
+  dt { font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+  dd { margin: 2px 0 0; font-size: 1.1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .status { color: var(--muted); }
+  .error { background: var(--error-bg); color: var(--error-fg); border-color: transparent; }
+  footer { color: var(--muted); font-size: 0.8rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Clima nas Capitais</h1>
+    <p class="sub">Escolha uma capital brasileira para ver as condições atuais do tempo.</p>
+  </header>
+
+  <section class="controls">
+    <label for="capital">Capital
+      <select id="capital">
+        <option value="">Selecione uma capital…</option>
+      </select>
+    </label>
+  </section>
+
+  <div id="msg" class="card status" hidden></div>
+
+  <section id="result" class="card" hidden aria-live="polite">
+    <div class="head">
+      <h2 class="city" id="r-city"></h2>
+      <p class="when" id="r-when"></p>
+    </div>
+    <div class="now">
+      <img id="r-icon" alt="">
+      <span class="temp" id="r-temp"></span>
+      <div>
+        <div class="desc" id="r-desc"></div>
+        <div class="feels" id="r-feels"></div>
+      </div>
+    </div>
+    <dl>
+      <div><dt>Mín. / Máx.</dt><dd id="r-minmax"></dd></div>
+      <div><dt>Umidade</dt><dd id="r-hum"></dd></div>
+      <div><dt>Vento</dt><dd id="r-wind"></dd></div>
+      <div><dt>Pressão</dt><dd id="r-press"></dd></div>
+      <div><dt>Nebulosidade</dt><dd id="r-clouds"></dd></div>
+      <div><dt>Visibilidade</dt><dd id="r-vis"></dd></div>
+      <div><dt>Nascer do sol</dt><dd id="r-rise"></dd></div>
+      <div><dt>Pôr do sol</dt><dd id="r-set"></dd></div>
+    </dl>
+  </section>
+
+  <footer>Dados de <a href="https://openweathermap.org/" target="_blank" rel="noopener">OpenWeather</a>.</footer>
+</main>
+
+<script>
+  const CAPITAIS = [
+    ["Rio Branco", "AC", -9.9747, -67.8243],
+    ["Maceió", "AL", -9.6658, -35.7353],
+    ["Macapá", "AP", 0.0349, -51.0664],
+    ["Manaus", "AM", -3.1190, -60.0217],
+    ["Salvador", "BA", -12.9714, -38.5014],
+    ["Fortaleza", "CE", -3.7319, -38.5267],
+    ["Brasília", "DF", -15.7939, -47.8828],
+    ["Vitória", "ES", -20.3155, -40.3128],
+    ["Goiânia", "GO", -16.6869, -49.2648],
+    ["São Luís", "MA", -2.5307, -44.3068],
+    ["Cuiabá", "MT", -15.6014, -56.0979],
+    ["Campo Grande", "MS", -20.4697, -54.6201],
+    ["Belo Horizonte", "MG", -19.9167, -43.9345],
+    ["Belém", "PA", -1.4558, -48.4902],
+    ["João Pessoa", "PB", -7.1195, -34.8450],
+    ["Curitiba", "PR", -25.4284, -49.2733],
+    ["Recife", "PE", -8.0476, -34.8770],
+    ["Teresina", "PI", -5.0892, -42.8019],
+    ["Rio de Janeiro", "RJ", -22.9068, -43.1729],
+    ["Natal", "RN", -5.7945, -35.2110],
+    ["Porto Alegre", "RS", -30.0346, -51.2177],
+    ["Porto Velho", "RO", -8.7612, -63.9039],
+    ["Boa Vista", "RR", 2.8235, -60.6758],
+    ["Florianópolis", "SC", -27.5954, -48.5480],
+    ["São Paulo", "SP", -23.5505, -46.6333],
+    ["Aracaju", "SE", -10.9091, -37.0677],
+    ["Palmas", "TO", -10.1689, -48.3317]
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  // Endereço do seu Worker no Cloudflare (veja o passo a passo)
+  const WORKER_URL = "https://clima-api.SEU-USUARIO.workers.dev";
+
+  const select = $("capital");
+  const msg = $("msg");
+  const result = $("result");
+
+  CAPITAIS.forEach(([nome, uf], i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = nome + " (" + uf + ")";
+    select.appendChild(opt);
+  });
+
+  function showMsg(text, isError) {
+    msg.textContent = text;
+    msg.className = "card " + (isError ? "error" : "status");
+    msg.hidden = false;
+  }
+
+  const num = (v, d = 0) => Number(v).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+  function direcao(graus) {
+    const pontos = ["N", "NE", "L", "SE", "S", "SO", "O", "NO"];
+    return pontos[Math.round(graus / 45) % 8];
+  }
+
+  // Horário local da cidade a partir do deslocamento (em segundos) devolvido pela API
+  function horaLocal(ts, offset) {
+    const d = new Date((ts + offset) * 1000);
+    return String(d.getUTCHours()).padStart(2, "0") + ":" + String(d.getUTCMinutes()).padStart(2, "0");
+  }
+
+  async function consultar() {
+    const idx = select.value;
+    result.hidden = true;
+    if (idx === "") { msg.hidden = true; return; }
+
+    if (WORKER_URL.includes("SEU-USUARIO")) {
+      showMsg("Falta configurar o endereço do Worker (WORKER_URL) no código da página.", true);
+      return;
+    }
+
+    const [nome, uf, lat, lon] = CAPITAIS[idx];
+    showMsg("Consultando " + nome + "…", false);
+
+    const url = WORKER_URL.replace(/\/$/, "") + "/?lat=" + lat + "&lon=" + lon;
+
+    try {
+      const resp = await fetch(url);
+      if (resp.status === 401) throw new Error("A chave da OpenWeather guardada no Worker é inválida ou ainda não foi ativada. Chaves novas podem levar até 2 horas.");
+      if (resp.status === 429) throw new Error("Limite de consultas da chave atingido. Tente novamente mais tarde.");
+      if (!resp.ok) throw new Error("A API respondeu com erro " + resp.status + ".");
+      const d = await resp.json();
+      if (select.value !== idx) return; // usuário trocou de cidade durante a consulta
+
+      const w = d.weather[0];
+      $("r-city").textContent = nome + " (" + uf + ")";
+      $("r-when").textContent = "Atualizado às " + horaLocal(d.dt, d.timezone) + " (horário local)";
+      $("r-icon").src = "https://openweathermap.org/img/wn/" + w.icon + "@2x.png";
+      $("r-icon").alt = w.description;
+      $("r-temp").textContent = num(d.main.temp) + " °C";
+      $("r-desc").textContent = w.description;
+      $("r-feels").textContent = "Sensação térmica de " + num(d.main.feels_like) + " °C";
+      $("r-minmax").textContent = num(d.main.temp_min) + "° / " + num(d.main.temp_max) + "°";
+      $("r-hum").textContent = num(d.main.humidity) + "%";
+      $("r-wind").textContent = num(d.wind.speed * 3.6) + " km/h " + (d.wind.deg != null ? direcao(d.wind.deg) : "");
+      $("r-press").textContent = num(d.main.pressure) + " hPa";
+      $("r-clouds").textContent = num(d.clouds.all) + "%";
+      $("r-vis").textContent = d.visibility != null ? num(d.visibility / 1000, 1) + " km" : "—";
+      $("r-rise").textContent = horaLocal(d.sys.sunrise, d.timezone);
+      $("r-set").textContent = horaLocal(d.sys.sunset, d.timezone);
+
+      msg.hidden = true;
+      result.hidden = false;
+    } catch (err) {
+      const rede = err instanceof TypeError;
+      showMsg(rede ? "Não foi possível conectar à API. Verifique sua conexão com a internet." : err.message, true);
+    }
+  }
+
+  select.addEventListener("change", consultar);
+</script>
+</body>
+</html>
