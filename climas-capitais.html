@@ -153,7 +153,6 @@
   ];
 
   const $ = (id) => document.getElementById(id);
-  // Endereço do seu Worker no Cloudflare (veja o passo a passo)
   const WORKER_URL = "https://clima-api.SEU-USUARIO.workers.dev";
 
   const select = $("capital");
@@ -180,7 +179,6 @@
     return pontos[Math.round(graus / 45) % 8];
   }
 
-  // Horário local da cidade a partir do deslocamento (em segundos) devolvido pela API
   function horaLocal(ts, offset) {
     const d = new Date((ts + offset) * 1000);
     return String(d.getUTCHours()).padStart(2, "0") + ":" + String(d.getUTCMinutes()).padStart(2, "0");
@@ -207,7 +205,7 @@
       if (resp.status === 429) throw new Error("Limite de consultas da chave atingido. Tente novamente mais tarde.");
       if (!resp.ok) throw new Error("A API respondeu com erro " + resp.status + ".");
       const d = await resp.json();
-      if (select.value !== idx) return; // usuário trocou de cidade durante a consulta
+      if (select.value !== idx) return;
 
       const w = d.weather[0];
       $("r-city").textContent = nome + " (" + uf + ")";
